@@ -20,33 +20,31 @@ set -eux
 
 # Build script for Travis-CI.
 
-SCRIPTDIR=$(cd $(dirname "$0") && pwd)
-ROOTDIR="$SCRIPTDIR/../.."
-WHISKDIR="$ROOTDIR/../openwhisk"
+SCRIPTDIR=$(cd "$(dirname "$0")" && pwd)
+ROOTDIR=$(cd "$SCRIPTDIR/../.." && pwd)
+WHISKDIR=$(cd "$ROOTDIR/../openwhisk" && pwd)
 
 export OPENWHISK_HOME=$WHISKDIR
 
 IMAGE_PREFIX=$1
 IMAGE_NAME=$2
 IMAGE_TAG=$3
-GRADLE_BUILD=":core:actionProxy:distDocker"
 
-if [ ${IMAGE_NAME} == "dockerskeleton" ]; then
-  GRADLE_BUILD=":core:actionProxy:distDocker"
-elif [ ${IMAGE_NAME} == "example" ]; then
-  GRADLE_BUILD=":sdk:docker:distDocker"
-fi
-
-if [[ ! -z ${DOCKER_USER} ]] && [[ ! -z ${DOCKER_PASSWORD} ]]; then
-  docker login -u "${DOCKER_USER}" -p "${DOCKER_PASSWORD}"
+if [ "${IMAGE_NAME}" == "dockerskeleton" ]; then
+  GRADLE_BUILD=":core:actionProxy:putManifestList"
+elif [ "${IMAGE_NAME}" == "example" ]; then
+  GRADLE_BUILD=":sdk:docker:putManifestList"
+else 
+  echo "*** Invalid image name provided: '${IMAGE_NAME}' ***"
+  exit 16
 fi
 
 if [[ ! -z ${GRADLE_BUILD} ]] && [[ ! -z ${IMAGE_PREFIX} ]] && [[ ! -z ${IMAGE_TAG} ]]; then
-  TERM=dumb ./gradlew \
-  ${GRADLE_BUILD} \
+  ./gradlew --console=plain \
+  "${GRADLE_BUILD}" \
   -PdockerRegistry=docker.io \
-  -PdockerImagePrefix=${IMAGE_PREFIX} \
-  -PdockerImageTag=${IMAGE_TAG}
+  -PdockerImagePrefix="${IMAGE_PREFIX}" \
+  -PdockerImageTag="${IMAGE_TAG}"
 fi
 
 
